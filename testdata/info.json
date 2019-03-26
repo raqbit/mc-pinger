@@ -1,0 +1,20 @@
+{
+  "version": {
+    "name": "1.13.2",
+    "protocol": 404
+  },
+  "players": {
+    "max": 100,
+    "online": 5,
+    "sample": [
+      {
+        "name": "Raqbit",
+        "id": "09bc745b-3679-4152-b96b-3f9c59c42059"
+      }
+    ]
+  },
+  "description": {
+    "text": "Hello world"
+  },
+  "favicon": "data:image/png;base64,<data>"
+}

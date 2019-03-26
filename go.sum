@@ -1,0 +1,4 @@
+github.com/go-restruct/restruct v0.0.0-20181027063219-22a9ba70a745 h1:sOGf2v01b5AHRPUDOz6aBm4zCb0Ha/3ETI/7vSuWpTk=
+github.com/go-restruct/restruct v0.0.0-20181027063219-22a9ba70a745/go.mod h1:e2k/t2/850rC773ilFYQSoqyJ78SpTx7gtFtOY6/AYA=
+github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
+github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
