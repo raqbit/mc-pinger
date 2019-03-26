@@ -4,8 +4,8 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	enc "mc-pinger/encoding"
-	"mc-pinger/packet"
+	enc "github.com/Raqbit/mc-pinger/encoding"
+	"github.com/Raqbit/mc-pinger/packet"
 	"net"
 	"strconv"
 )

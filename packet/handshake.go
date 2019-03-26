@@ -2,7 +2,7 @@ package packet
 
 import (
 	"bytes"
-	enc "mc-pinger/encoding"
+	enc "github.com/Raqbit/mc-pinger/encoding"
 )
 
 type HandshakePacket struct {

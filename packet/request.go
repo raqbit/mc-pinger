@@ -1,7 +1,7 @@
 package packet
 
 import (
-	enc "mc-pinger/encoding"
+	enc "github.com/Raqbit/mc-pinger/encoding"
 )
 
 type RequestPacket struct{}

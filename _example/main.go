@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/Raqbit/mc-pinger"
 	"log"
-	"mc-pinger"
 )
 
 func main() {
