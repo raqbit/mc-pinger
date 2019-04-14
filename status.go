@@ -1,15 +1,8 @@
 package mcpinger
 
-import "encoding/json"
-
-// Minecraft chat component
-// See: https://wiki.vg/Chat#Current_system_.28JSON_Chat.29
-//
-// Because the Notchian server does not provide actual chat component data,
-// we only parse "text". This will use the old system, see: https://wiki.vg/Chat#Control_Sequences
-type ChatComponent struct {
-	Text string `json:"text"` // Text content
-}
+import (
+	"encoding/json"
+)
 
 // Server info version
 type Version struct {
@@ -25,9 +18,9 @@ type Player struct {
 
 // Server info players
 type Players struct {
-	Max    uint `json:"max"`    // Max amount of players allowed
-	Online uint `json:"online"` // Amount of players online
-	Sample []Player             // Sample of online players
+	Max    uint     `json:"max"`    // Max amount of players allowed
+	Online uint     `json:"online"` // Amount of players online
+	Sample []Player // Sample of online players
 }
 
 // Server ping response
