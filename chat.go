@@ -13,6 +13,7 @@ type RegularChatComponent struct {
 	Underlined    bool                   `json:"underlined"`    // Component is underlined
 	Strikethrough bool                   `json:"strikethrough"` // Component is struck out
 	Obfuscated    bool                   `json:"obfuscated"`    // Component randomly switches between characters of the same width
+	Color         string                 `json:"color"`         // Contains the color for the component
 	Extra         []RegularChatComponent `json:"extra"`         // RegularChatComponent siblings
 }
 
