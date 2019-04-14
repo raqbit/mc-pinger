@@ -7,7 +7,16 @@ import (
 )
 
 const (
-	TestDataDir = "testdata" // Name of testdata directory
+	TestDataDir       = "testdata" // Name of testdata directory
+	VersionName       = "1.13.2"
+	Protocol          = 404
+	Description       = "Hello world"
+	MaxPlayers        = 100
+	OnlinePlayers     = 5
+	PlayerSampleCount = 1
+	PlayerSampleName  = "Raqbit"
+	PlayerSampleUuid  = "09bc745b-3679-4152-b96b-3f9c59c42059"
+	Favicon           = "data:image/png;base64,<data>"
 )
 
 func TestParseServerInfo(t *testing.T) {
@@ -25,42 +34,42 @@ func TestParseServerInfo(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if info.Version.Name != "1.13.2" {
+		if info.Version.Name != VersionName {
 			parseError(t, f, "version name")
 		}
 
-		if info.Version.Protocol != 404 {
+		if info.Version.Protocol != Protocol {
 			parseError(t, f, "protocol version")
 		}
 
-		if info.Description.Text != "Hello world" {
+		if info.Description.Text != Description {
 			parseError(t, f, "description")
 
 		}
 
-		if info.Players.Max != 100 {
+		if info.Players.Max != MaxPlayers {
 			parseError(t, f, "max players")
 
 		}
 
-		if info.Players.Online != 5 {
+		if info.Players.Online != OnlinePlayers {
 			parseError(t, f, "online players")
 		}
 
-		if len(info.Players.Sample) != 1 {
+		if len(info.Players.Sample) != PlayerSampleCount {
 			parseError(t, f, "player sample")
 		} else {
-			if info.Players.Sample[0].Name != "Raqbit" {
+			if info.Players.Sample[0].Name != PlayerSampleName {
 				parseError(t, f, "player sample name")
 			}
 
-			if info.Players.Sample[0].ID != "09bc745b-3679-4152-b96b-3f9c59c42059" {
+			if info.Players.Sample[0].ID != PlayerSampleUuid {
 				parseError(t, f, "player sample uuid")
 			}
 
 		}
 
-		if info.Favicon != "data:image/png;base64,<data>" {
+		if info.Favicon != Favicon {
 			parseError(t, f, "favicon")
 		}
 	}
