@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	enc "github.com/Raqbit/mc-pinger/encoding"
+	"io"
 )
 
 type HandshakePacket struct {
@@ -18,11 +19,11 @@ func (h HandshakePacket) Marshal() ([]byte, error) {
 	return buffer.Bytes(), err
 }
 
-func (HandshakePacket) PacketID() enc.VarInt {
+func (HandshakePacket) ID() enc.VarInt {
 	return 0x00
 }
 
-func (h HandshakePacket) write(buffer enc.Writer) error {
+func (h HandshakePacket) write(buffer io.Writer) error {
 
 	// Write protocol version
 	if err := enc.WriteVarInt(buffer, h.ProtoVer); err != nil {

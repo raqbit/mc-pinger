@@ -10,21 +10,12 @@ import (
 const (
 	VarIntMaxByteSize = 5
 )
+
 var (
 	// ErrVarIntTooLarge is returned when a read varint was too large
 	// (more than 5 bytes)
 	ErrVarIntTooLarge = errors.New("VarInt too large")
 )
-
-type Writer interface {
-	io.Writer
-	io.ByteWriter
-}
-
-type Reader interface {
-	io.Reader
-	io.ByteReader
-}
 
 // Minecraft Protocol UnsignedShort type
 type UnsignedShort uint16
@@ -41,11 +32,27 @@ func ReadUnsignedShort(buff io.Reader) (UnsignedShort, error) {
 	return UnsignedShort(short), err
 }
 
+// Minecrat Protocol UnsignedByte type
+type UnsignedByte byte
+
+func ReadUnsignedByte(r io.Reader) (UnsignedByte, error) {
+	var bytes [1]byte
+	_, err := r.Read(bytes[:1])
+	return UnsignedByte(bytes[0]), err
+}
+
+func WriteUnsignedByte(w io.Writer, value UnsignedByte) error {
+	var bytes [1]byte
+	bytes[0] = byte(value)
+	_, err := w.Write(bytes[:1])
+	return err
+}
+
 // Minecraft Protocol VarInt type
 type VarInt int32
 
 // WriteVarInt writes the passed VarInt encoded integer to the writer.
-func WriteVarInt(w io.ByteWriter, value VarInt) error {
+func WriteVarInt(w io.Writer, value VarInt) error {
 	for cont := true; cont; cont = value != 0 {
 		temp := byte(value & 0x7F)
 
@@ -56,7 +63,7 @@ func WriteVarInt(w io.ByteWriter, value VarInt) error {
 			temp |= 0x80
 		}
 
-		if err := w.WriteByte(temp); err != nil {
+		if err := WriteUnsignedByte(w, UnsignedByte(temp)); err != nil {
 			return err
 		}
 	}
@@ -65,14 +72,14 @@ func WriteVarInt(w io.ByteWriter, value VarInt) error {
 }
 
 // ReadVarInt reads a VarInt encoded integer from the reader.
-func ReadVarInt(r io.ByteReader) (VarInt, error) {
+func ReadVarInt(r io.Reader) (VarInt, error) {
 	var numRead uint
 	var result int32
-	var read byte
+	var read UnsignedByte
 
 	for cont := true; cont; cont = (read & 0x80) != 0 {
 		var err error
-		read, err = r.ReadByte()
+		read, err = ReadUnsignedByte(r)
 
 		if err != nil {
 			return 0, err
@@ -96,7 +103,7 @@ type String string
 
 // WriteString writes a VarInt prefixed utf-8 string to the
 // writer.
-func WriteString(w Writer, str String) error {
+func WriteString(w io.Writer, str String) error {
 
 	// Creating buffer from string
 	b := []byte(str)
@@ -116,7 +123,7 @@ func WriteString(w Writer, str String) error {
 
 // ReadString reads a VarInt prefixed utf-8 string to the
 // reader. It uses io.ReadFull to ensure all bytes are read.
-func ReadString(r Reader) (String, error) {
+func ReadString(r io.Reader) (String, error) {
 
 	// Reading string size encoded as VarInt
 	l, err := ReadVarInt(r)
