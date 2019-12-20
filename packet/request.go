@@ -6,7 +6,7 @@ import (
 
 type RequestPacket struct{}
 
-func (RequestPacket) PacketID() enc.VarInt {
+func (RequestPacket) ID() enc.VarInt {
 	return 0x00
 }
 

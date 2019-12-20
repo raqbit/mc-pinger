@@ -118,8 +118,8 @@ func (p *mcPinger) readPacket(rd *bufio.Reader) (*packet.ResponsePacket, error) 
 
 	_, packetId, err := packet.ReadPacketHeader(rd)
 
-	if packetId != rp.PacketID() {
-		return nil, InvalidPacketError{expected: rp.PacketID(), actual: packetId}
+	if packetId != rp.ID() {
+		return nil, InvalidPacketError{expected: rp.ID(), actual: packetId}
 	}
 
 	if err != nil {

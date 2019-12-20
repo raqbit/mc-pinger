@@ -3,11 +3,12 @@ package packet
 import (
 	"bytes"
 	enc "github.com/Raqbit/mc-pinger/encoding"
+	"io"
 )
 
 // Represents a Minecraft packet.
 type Packet interface {
-	PacketID() enc.VarInt
+	ID() enc.VarInt
 }
 
 // Packet which is able to be encoded.
@@ -19,11 +20,11 @@ type EncodablePacket interface {
 // Packet which is able to be decoded.
 type DecodablePacket interface {
 	Packet
-	Unmarshal(reader enc.Reader) error
+	Unmarshal(reader io.Reader) error
 }
 
 // Write a packet to the given Writer.
-func WritePacket(p EncodablePacket, wr enc.Writer) error {
+func WritePacket(p EncodablePacket, w io.Writer) error {
 	// Marshal packet data
 	data, err := p.Marshal()
 
@@ -42,17 +43,17 @@ func WritePacket(p EncodablePacket, wr enc.Writer) error {
 	length := enc.VarInt(len(pId) + len(data))
 
 	// Write packet length
-	if err = enc.WriteVarInt(wr, length); err != nil {
+	if err = enc.WriteVarInt(w, length); err != nil {
 		return err
 	}
 
 	// Write packet id
-	if _, err = wr.Write(pId); err != nil {
+	if _, err = w.Write(pId); err != nil {
 		return err
 	}
 
 	// Write packet data
-	if _, err = wr.Write(data); err != nil {
+	if _, err = w.Write(data); err != nil {
 		return err
 	}
 
@@ -61,7 +62,7 @@ func WritePacket(p EncodablePacket, wr enc.Writer) error {
 
 // Get the packet ID of given packet in byte form.
 func getPacketIdBytes(p Packet) ([]byte, error) {
-	packetId := p.PacketID()
+	packetId := p.ID()
 
 	pIdBuff := new(bytes.Buffer)
 
@@ -75,14 +76,14 @@ func getPacketIdBytes(p Packet) ([]byte, error) {
 }
 
 // Reads a packet header (length, version) from the given Reader.
-func ReadPacketHeader(rd enc.Reader) (enc.VarInt, enc.VarInt, error) {
-	pLen, err := enc.ReadVarInt(rd)
+func ReadPacketHeader(r io.Reader) (enc.VarInt, enc.VarInt, error) {
+	pLen, err := enc.ReadVarInt(r)
 
 	if err != nil {
 		return 0, 0, err
 	}
 
-	pId, err := enc.ReadVarInt(rd)
+	pId, err := enc.ReadVarInt(r)
 
 	if err != nil {
 		return 0, 0, err

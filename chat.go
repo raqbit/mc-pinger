@@ -25,7 +25,8 @@ type ChatComponent struct {
 func (c *ChatComponent) UnmarshalJSON(data []byte) error {
 	var regular RegularChatComponent
 
-	if data[0] == 0x22 {
+	// The data starts with quotes which means it's a string, not an object
+	if data[0] == '"' {
 		var text string
 		if err := json.Unmarshal(data, &text); err != nil {
 			return err
