@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/Raqbit/mc-pinger"
 	"log"
+
+	mcpinger "github.com/Raqbit/mc-pinger"
 )
 
 func main() {
 	// Create new Pinger
-	pinger := mcpinger.New("localhost", 25565)
+	pinger := mcpinger.New("mc.hypixel.net", 25565)
 
 	// Get server info
 	info, err := pinger.Ping()
