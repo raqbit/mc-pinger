@@ -2,6 +2,7 @@ package mcpinger
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -45,14 +46,16 @@ func (p *mcPinger) Ping() (*ServerInfo, error) {
 
 	address := net.JoinHostPort(p.Host, strconv.Itoa(int(p.Port)))
 
-	var conn net.Conn
-	var err error
-
-	if p.Timeout > time.Duration(0) {
-		conn, err = net.DialTimeout("tcp", address, p.Timeout)
-	} else {
-		conn, err = net.Dial("tcp", address)
+	if p.Timeout <= 0 {
+		p.Timeout = 10 * time.Second
 	}
+
+	var d net.Dialer
+
+	ctx, cancel := context.WithTimeout(context.Background(), p.Timeout)
+	defer cancel()
+
+	conn, err := d.DialContext(ctx, "tcp", address)
 
 	rd := bufio.NewReader(conn)
 	w := bufio.NewWriter(conn)
@@ -148,12 +151,13 @@ func (p *mcPinger) readPacket(rd *bufio.Reader) (*packet.ResponsePacket, error) 
 // to connect to a minecraft server
 func New(host string, port uint16) Pinger {
 	return &mcPinger{
-		Host: host,
-		Port: port,
+		Host:    host,
+		Port:    port,
+		Timeout: 0,
 	}
 }
 
-// Creates a new Pinger with specified host & port
+// NewTimed Creates a new Pinger with specified host & port
 // to connect to a minecraft server
 func NewTimed(host string, port uint16, timeout time.Duration) Pinger {
 	return &mcPinger{
