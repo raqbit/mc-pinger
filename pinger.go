@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"os"
 	"strconv"
 	"time"
 
@@ -48,9 +47,8 @@ func (p *mcPinger) Ping() (*ServerInfo, error) {
 
 	var conn net.Conn
 	var err error
-	fmt.Fprintf(os.Stdout, "Timeout: %d\n", p.Timeout)
+
 	if p.Timeout > time.Duration(0) {
-		fmt.Println("With timeout")
 		conn, err = net.DialTimeout("tcp", address, p.Timeout)
 	} else {
 		conn, err = net.Dial("tcp", address)
