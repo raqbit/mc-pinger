@@ -4,10 +4,13 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"net"
+	"os"
+	"strconv"
+	"time"
+
 	enc "github.com/Raqbit/mc-pinger/encoding"
 	"github.com/Raqbit/mc-pinger/packet"
-	"net"
-	"strconv"
 )
 
 const (
@@ -21,11 +24,12 @@ type Pinger interface {
 }
 
 type mcPinger struct {
-	Host string
-	Port uint16
+	Host    string
+	Port    uint16
+	Timeout time.Duration
 }
 
-// Error returned when the received packet type
+// InvalidPacketError returned when the received packet type
 // does not match the expected packet type.
 type InvalidPacketError struct {
 	expected enc.VarInt
@@ -43,7 +47,15 @@ func (p *mcPinger) Ping() (*ServerInfo, error) {
 	address := net.JoinHostPort(p.Host, strconv.Itoa(int(p.Port)))
 
 	// TODO: TIMEOUTS
-	conn, err := net.Dial("tcp", address)
+	var conn net.Conn
+	var err error
+	fmt.Fprintf(os.Stdout, "Timeout: %d\n", p.Timeout)
+	if p.Timeout > time.Duration(0) {
+		fmt.Println("With timeout")
+		conn, err = net.DialTimeout("tcp", address, p.Timeout)
+	} else {
+		conn, err = net.Dial("tcp", address)
+	}
 
 	rd := bufio.NewReader(conn)
 	w := bufio.NewWriter(conn)
@@ -135,11 +147,21 @@ func (p *mcPinger) readPacket(rd *bufio.Reader) (*packet.ResponsePacket, error) 
 	return rp, nil
 }
 
-// Creates a new Pinger with specified host & port
+// New Creates a new Pinger with specified host & port
 // to connect to a minecraft server
 func New(host string, port uint16) Pinger {
 	return &mcPinger{
 		Host: host,
 		Port: port,
+	}
+}
+
+// Creates a new Pinger with specified host & port
+// to connect to a minecraft server
+func NewTimed(host string, port uint16, timeout time.Duration) Pinger {
+	return &mcPinger{
+		Host:    host,
+		Port:    port,
+		Timeout: timeout,
 	}
 }
