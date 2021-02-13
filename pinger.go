@@ -46,7 +46,6 @@ func (p *mcPinger) Ping() (*ServerInfo, error) {
 
 	address := net.JoinHostPort(p.Host, strconv.Itoa(int(p.Port)))
 
-	// TODO: TIMEOUTS
 	var conn net.Conn
 	var err error
 	fmt.Fprintf(os.Stdout, "Timeout: %d\n", p.Timeout)
