@@ -26,6 +26,7 @@ type Pinger interface {
 type mcPinger struct {
 	Host    string
 	Port    uint16
+	Context context.Context
 	Timeout time.Duration
 }
 
@@ -40,29 +41,35 @@ func (i InvalidPacketError) Error() string {
 	return fmt.Sprintf("Received invalid packet. Expected #%d, got #%d", i.expected, i.actual)
 }
 
+func (p *mcPinger) Ping() (*ServerInfo, error) {
+	if p.Timeout > 0 && p.Context == nil {
+		ctx, cancel := context.WithTimeout(context.Background(), p.Timeout)
+		p.Context = ctx
+		defer cancel()
+	}
+	return p.ping()
+}
+
 // Will connect to the Minecraft server,
 // retrieve server status and return the server info.
-func (p *mcPinger) Ping() (*ServerInfo, error) {
+func (p *mcPinger) ping() (*ServerInfo, error) {
+
+	if p.Context == nil {
+		panic("Context is nil!")
+	}
 
 	address := net.JoinHostPort(p.Host, strconv.Itoa(int(p.Port)))
 
-	if p.Timeout <= 0 {
-		p.Timeout = 10 * time.Second
-	}
-
 	var d net.Dialer
 
-	ctx, cancel := context.WithTimeout(context.Background(), p.Timeout)
-	defer cancel()
-
-	conn, err := d.DialContext(ctx, "tcp", address)
-
-	rd := bufio.NewReader(conn)
-	w := bufio.NewWriter(conn)
+	conn, err := d.DialContext(p.Context, "tcp", address)
 
 	if err != nil {
 		return nil, errors.New("could not connect to Minecraft server: " + err.Error())
 	}
+
+	rd := bufio.NewReader(conn)
+	w := bufio.NewWriter(conn)
 
 	defer conn.Close()
 
@@ -128,10 +135,10 @@ func (p *mcPinger) readPacket(rd *bufio.Reader) (*packet.ResponsePacket, error) 
 
 	rp := &packet.ResponsePacket{}
 
-	_, packetId, err := packet.ReadPacketHeader(rd)
+	_, packetID, err := packet.ReadPacketHeader(rd)
 
-	if packetId != rp.ID() {
-		return nil, InvalidPacketError{expected: rp.ID(), actual: packetId}
+	if packetID != rp.ID() {
+		return nil, InvalidPacketError{expected: rp.ID(), actual: packetID}
 	}
 
 	if err != nil {
@@ -153,16 +160,25 @@ func New(host string, port uint16) Pinger {
 	return &mcPinger{
 		Host:    host,
 		Port:    port,
-		Timeout: 0,
+		Context: context.Background(),
 	}
 }
 
 // NewTimed Creates a new Pinger with specified host & port
-// to connect to a minecraft server
+// to connect to a minecraft server with Timeout
 func NewTimed(host string, port uint16, timeout time.Duration) Pinger {
 	return &mcPinger{
 		Host:    host,
 		Port:    port,
 		Timeout: timeout,
+	}
+}
+
+// NewContext Creates a new Pinger with the given Context
+func NewContext(ctx context.Context, host string, port uint16) Pinger {
+	return &mcPinger{
+		Host:    host,
+		Port:    port,
+		Context: ctx,
 	}
 }
