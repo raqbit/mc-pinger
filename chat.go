@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 )
 
-// Minecraft chat component
+// RegularChatComponent is aMinecraft chat component
 // See: https://wiki.vg/Chat#Current_system_.28JSON_Chat.29
 type RegularChatComponent struct {
 	Text          string                 `json:"text"`          // Text content
@@ -17,11 +17,12 @@ type RegularChatComponent struct {
 	Extra         []RegularChatComponent `json:"extra"`         // RegularChatComponent siblings
 }
 
-// Wraps a RegularChatComponent for parsing both regular & string-only MOTD's
+// ChatComponent wraps a RegularChatComponent for parsing both regular & string-only MOTD's
 type ChatComponent struct {
 	RegularChatComponent
 }
 
+// UnmarshalJSON unmarshals the JSON data
 func (c *ChatComponent) UnmarshalJSON(data []byte) error {
 	var regular RegularChatComponent
 
