@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 )
 
-// RegularChatComponent is aMinecraft chat component
+// RegularChatComponent is a Minecraft chat component
 // See: https://wiki.vg/Chat#Current_system_.28JSON_Chat.29
 type RegularChatComponent struct {
 	Text          string                 `json:"text"`          // Text content
