@@ -7,7 +7,7 @@ import (
 // Server info version
 type Version struct {
 	Name     string `json:"name"`     // Version name
-	Protocol uint   `json:"protocol"` // Version protocol number
+	Protocol int32  `json:"protocol"` // Version protocol number
 }
 
 // Server info player
@@ -18,8 +18,8 @@ type Player struct {
 
 // Server info players
 type Players struct {
-	Max    uint     `json:"max"`    // Max amount of players allowed
-	Online uint     `json:"online"` // Amount of players online
+	Max    int32     `json:"max"`    // Max amount of players allowed
+	Online int32     `json:"online"` // Amount of players online
 	Sample []Player // Sample of online players
 }
 
