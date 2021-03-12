@@ -8,11 +8,8 @@ import (
 )
 
 func main() {
-	// Create new Pinger
-	pinger := mcpinger.New("mc.hypixel.net", 25565)
-
-	// Get server info
-	info, err := pinger.Ping()
+	// Ping Minecraft server
+	info, err := mcpinger.Ping("mc.hypixel.net:25565")
 
 	if err != nil {
 		log.Println(err)

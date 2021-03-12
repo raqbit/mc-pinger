@@ -1,0 +1,4 @@
+github.com/Raqbit/mcproto v0.0.0-20200426143843-5f08290e94ac h1:Pz6vlJdRqjK4JXsAdsJ2zdkOSvW6W9yn4Rtxd+6wLLg=
+github.com/Raqbit/mcproto v0.0.0-20200426143843-5f08290e94ac/go.mod h1:phI5BRvrOO1lY8PEQb6LOXyJ1jJNy+dyHRrAGpw3gz8=
+github.com/google/uuid v1.1.1 h1:Gkbcsh/GbpXz7lPftLA3P6TYMwjCLYm83jiFQZF/3gY=
+github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
