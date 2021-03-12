@@ -3,32 +3,29 @@ package main
 import (
 	"context"
 	"fmt"
+	mcpinger "github.com/Raqbit/mc-pinger"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
-
-	mcpinger "github.com/Raqbit/mc-pinger"
 )
 
 func main() {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	sig := make(chan os.Signal)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+
 	go func() {
 		<-sig
 		// NOW cancel
-		fmt.Println("aborting due to interrupt...")
+		fmt.Println("Aborting due to signal...")
 		cancel()
 	}()
 
-	// Create new Pinger with 10 seconds Timeout
-	pinger := mcpinger.NewContext(ctx, "mc.herobone.de", 25565)
-	// Get server info
-	info, err := pinger.Ping()
+	// Ping Minecraft server with context
+	info, err := mcpinger.PingContext(ctx, "mc.hypixel.net", "")
 
 	if err != nil {
 		log.Println(err)

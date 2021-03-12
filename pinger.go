@@ -1,184 +1,154 @@
 package mcpinger
 
 import (
-	"bufio"
 	"context"
-	"errors"
 	"fmt"
+	"github.com/Raqbit/mcproto/encoding"
+	"github.com/Raqbit/mcproto/packet"
+	"github.com/Raqbit/mcproto/types"
 	"net"
 	"strconv"
 	"time"
 
-	enc "github.com/Raqbit/mc-pinger/encoding"
-	"github.com/Raqbit/mc-pinger/packet"
+	"github.com/Raqbit/mcproto"
 )
 
-const (
-	UnknownProtoVersion = -1
-	StatusState         = 1
-)
-
-// Pinger allows you to retrieve server info.
-type Pinger interface {
-	Ping() (*ServerInfo, error)
+// A Pinger contains options for pinging a Minecraft server.
+//
+// The zero value for each field is equivalent to pinging
+// without that option. Pinging with the zero value of Pinger
+// is therefore equivalent to just calling the Ping function.
+//
+// It is safe to call Pinger's methods concurrently.
+type Pinger struct {
 }
 
-type mcPinger struct {
-	Host    string
-	Port    uint16
-	Context context.Context
-	Timeout time.Duration
+// Ping sends a server query to the specified address.
+func (p Pinger) Ping(host, port string) (*packet.ServerInfo, error) {
+	return p.PingContext(context.Background(), host, port)
 }
 
-// InvalidPacketError returned when the received packet type
-// does not match the expected packet type.
-type InvalidPacketError struct {
-	expected enc.VarInt
-	actual   enc.VarInt
+// PingTimeout acts like Ping but takes a timeout.
+//
+// If the timeout expires before the server info has been retrieved, an error is returned.
+func (p Pinger) PingTimeout(host, port string, timeout time.Duration) (*packet.ServerInfo, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	return p.PingContext(ctx, host, port)
 }
 
-func (i InvalidPacketError) Error() string {
-	return fmt.Sprintf("Received invalid packet. Expected #%d, got #%d", i.expected, i.actual)
-}
-
-func (p *mcPinger) Ping() (*ServerInfo, error) {
-	if p.Timeout > 0 && p.Context == nil {
-		ctx, cancel := context.WithTimeout(context.Background(), p.Timeout)
-		p.Context = ctx
-		defer cancel()
-	}
-	return p.ping()
-}
-
-// Will connect to the Minecraft server,
-// retrieve server status and return the server info.
-func (p *mcPinger) ping() (*ServerInfo, error) {
-
-	if p.Context == nil {
-		panic("Context is nil!")
+// PingContext acts like Ping but takes a context.
+//
+// The provided Context must be non-nil. If the context expires before
+// the server info has been retrieved, an error is returned.
+func (p Pinger) PingContext(ctx context.Context, host, port string) (*packet.ServerInfo, error) {
+	if ctx == nil {
+		panic("nil context")
 	}
 
-	address := net.JoinHostPort(p.Host, strconv.Itoa(int(p.Port)))
-
-	var d net.Dialer
-
-	conn, err := d.DialContext(p.Context, "tcp", address)
+	// Connect to Minecraft server
+	conn, address, err := mcproto.DialContext(ctx, host, port)
 
 	if err != nil {
-		return nil, errors.New("could not connect to Minecraft server: " + err.Error())
+		return nil, fmt.Errorf("could not connect to Minecraft server: %w", err)
 	}
-
-	rd := bufio.NewReader(conn)
-	w := bufio.NewWriter(conn)
 
 	defer conn.Close()
 
-	err = p.sendHandshakePacket(w)
+	// Send handshake
+	if err = sendHandshakePacket(ctx, conn, address); err != nil {
+		return nil, err
+	}
+
+	// Switch to the state we requested
+	conn.SetState(types.ConnectionStateStatus)
+
+	// Send server query
+	if err = sendServerQueryPacket(ctx, conn); err != nil {
+		return nil, err
+	}
+
+	// Read server info response
+	res, err := readServerInfoPacket(ctx, conn)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = p.sendRequestPacket(w)
-
-	if err != nil {
-		return nil, err
-	}
-
-	err = w.Flush()
-
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := p.readPacket(rd)
-
-	if err != nil {
-		return nil, err
-	}
-
-	info, err := parseServerInfo([]byte(res.Json))
-
-	return info, err
+	return &res.Response, err
 }
 
-func (p *mcPinger) sendHandshakePacket(w *bufio.Writer) error {
+// Ping sends a server query to the specified address.
+func Ping(host, port string) (*packet.ServerInfo, error) {
+	var p Pinger
+	return p.Ping(host, port)
+}
+
+// PingContext acts like Ping but takes a context.
+//
+// The provided Context must be non-nil. If the context expires before
+// the server info has been retrieved, an error is returned.
+func PingContext(ctx context.Context, host, port string) (*packet.ServerInfo, error) {
+	var p Pinger
+	return p.PingContext(ctx, host, port)
+}
+
+// PingTimeout acts like Ping but takes a timeout.
+//
+// If the timeout expires before the server info has been retrieved, an error is returned.
+func PingTimeout(host, port string, timeout time.Duration) (*packet.ServerInfo, error) {
+	var p Pinger
+	return p.PingTimeout(host, port, timeout)
+}
+
+func sendHandshakePacket(ctx context.Context, conn mcproto.Connection, address string) error {
+	host, port, err := net.SplitHostPort(address)
+
+	if err != nil {
+		return fmt.Errorf("could not split host & port: %w", err)
+	}
+
+	serverPort, err := strconv.Atoi(port)
+
+	if err != nil {
+		return fmt.Errorf("could not parse port: %w", err)
+	}
+
 	handshakePkt := &packet.HandshakePacket{
-		ProtoVer:   UnknownProtoVersion,
-		ServerAddr: enc.String(p.Host),
-		ServerPort: enc.UnsignedShort(p.Port),
-		NextState:  StatusState,
+		ProtoVer:   -1,
+		ServerAddr: encoding.String(host),
+		ServerPort: encoding.UnsignedShort(uint16(serverPort)),
+		NextState:  types.ConnectionStateStatus,
 	}
 
-	err := packet.WritePacket(handshakePkt, w)
-
-	if err != nil {
-		return errors.New("could not pack: " + err.Error())
-	}
-
-	return nil
-}
-
-func (p *mcPinger) sendRequestPacket(w *bufio.Writer) error {
-	requestPkt := &packet.RequestPacket{}
-
-	err := packet.WritePacket(requestPkt, w)
-
-	if err != nil {
-		return errors.New("could not pack: " + err.Error())
+	if err = conn.WritePacket(ctx, handshakePkt); err != nil {
+		return fmt.Errorf("could not send handshake packet: %w", err)
 	}
 
 	return nil
 }
 
-func (p *mcPinger) readPacket(rd *bufio.Reader) (*packet.ResponsePacket, error) {
-
-	rp := &packet.ResponsePacket{}
-
-	_, packetID, err := packet.ReadPacketHeader(rd)
-
-	if packetID != rp.ID() {
-		return nil, InvalidPacketError{expected: rp.ID(), actual: packetID}
+func sendServerQueryPacket(ctx context.Context, w mcproto.Connection) error {
+	if err := w.WritePacket(ctx, &packet.ServerQueryPacket{}); err != nil {
+		return fmt.Errorf("could not send server query request packet: %w", err)
 	}
+
+	return nil
+}
+
+func readServerInfoPacket(ctx context.Context, conn mcproto.Connection) (*packet.ServerInfoPacket, error) {
+	pkt, err := conn.ReadPacket(ctx)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not read server info packet: %w", err)
 	}
 
-	err = rp.Unmarshal(rd)
+	resp, ok := pkt.(*packet.ServerInfoPacket)
 
-	if err != nil {
-		return nil, err
+	if !ok {
+		return nil, fmt.Errorf("returned packet was not expected server info")
 	}
 
-	return rp, nil
-}
-
-// New Creates a new Pinger with specified host & port
-// to connect to a minecraft server
-func New(host string, port uint16) Pinger {
-	return &mcPinger{
-		Host:    host,
-		Port:    port,
-		Context: context.Background(),
-	}
-}
-
-// NewTimed Creates a new Pinger with specified host & port
-// to connect to a minecraft server with Timeout
-func NewTimed(host string, port uint16, timeout time.Duration) Pinger {
-	return &mcPinger{
-		Host:    host,
-		Port:    port,
-		Timeout: timeout,
-	}
-}
-
-// NewContext Creates a new Pinger with the given Context
-func NewContext(ctx context.Context, host string, port uint16) Pinger {
-	return &mcPinger{
-		Host:    host,
-		Port:    port,
-		Context: ctx,
-	}
+	return resp, nil
 }

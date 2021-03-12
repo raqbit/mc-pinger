@@ -9,11 +9,8 @@ import (
 )
 
 func main() {
-	// Create new Pinger with 10 seconds Timeout
-	pinger := mcpinger.NewTimed("mc.herobone.de", 25565, 10*time.Second)
-
-	// Get server info
-	info, err := pinger.Ping()
+	// Ping Minecraft server with 10 seconds timeout
+	info, err := mcpinger.PingTimeout("mc.hypixel.net", "", 10*time.Second)
 
 	if err != nil {
 		log.Println(err)
