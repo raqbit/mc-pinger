@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/pires/go-proxyproto"
 	"net"
 	"strconv"
 	"time"
@@ -28,6 +29,9 @@ type mcPinger struct {
 	Port    uint16
 	Context context.Context
 	Timeout time.Duration
+
+	UseProxy     bool
+	ProxyVersion byte
 }
 
 // InvalidPacketError returned when the received packet type
@@ -66,6 +70,13 @@ func (p *mcPinger) ping() (*ServerInfo, error) {
 
 	if err != nil {
 		return nil, errors.New("could not connect to Minecraft server: " + err.Error())
+	}
+
+	if p.UseProxy {
+		err = p.writeProxyHeader(conn)
+		if err != nil {
+			return nil, errors.New("could not write PROXY header: " + err.Error())
+		}
 	}
 
 	rd := bufio.NewReader(conn)
@@ -154,14 +165,25 @@ func (p *mcPinger) readPacket(rd *bufio.Reader) (*packet.ResponsePacket, error) 
 	return rp, nil
 }
 
+func (p *mcPinger) writeProxyHeader(conn net.Conn) error {
+	header := proxyproto.HeaderProxyFromAddrs(p.ProxyVersion, conn.LocalAddr(), conn.RemoteAddr())
+
+	_, err := header.WriteTo(conn)
+	return err
+}
+
 // New Creates a new Pinger with specified host & port
 // to connect to a minecraft server
-func New(host string, port uint16) Pinger {
-	return &mcPinger{
+func New(host string, port uint16, options ...McPingerOption) Pinger {
+	p := &mcPinger{
 		Host:    host,
 		Port:    port,
 		Context: context.Background(),
 	}
+	for _, opt := range options {
+		opt(p)
+	}
+	return p
 }
 
 // NewTimed Creates a new Pinger with specified host & port
@@ -180,5 +202,29 @@ func NewContext(ctx context.Context, host string, port uint16) Pinger {
 		Host:    host,
 		Port:    port,
 		Context: ctx,
+	}
+}
+
+// McPingerOption instances can be combined when creating a new Pinger
+type McPingerOption func(p *mcPinger)
+
+func WithTimeout(timeout time.Duration) McPingerOption {
+	return func(p *mcPinger) {
+		p.Timeout = timeout
+	}
+}
+
+func WithContext(ctx context.Context) McPingerOption {
+	return func(p *mcPinger) {
+		p.Context = ctx
+	}
+}
+
+// WithProxyProto enables support for Bungeecord's proxy_protocol feature, which listens for
+// PROXY protocol connections via HAproxy. version must be 1 (text) or 2 (binary).
+func WithProxyProto(version byte) McPingerOption {
+	return func(p *mcPinger) {
+		p.UseProxy = true
+		p.ProxyVersion = version
 	}
 }
