@@ -26,7 +26,8 @@ func main() {
 	}()
 
 	// Create new Pinger with 10 seconds Timeout
-	pinger := mcpinger.NewContext(ctx, "mc.herobone.de", 25565)
+	pinger := mcpinger.New("mc.herobone.de", 25565, mcpinger.WithContext(ctx))
+
 	// Get server info
 	info, err := pinger.Ping()
 

@@ -10,7 +10,7 @@ import (
 
 func main() {
 	// Create new Pinger with 10 seconds Timeout
-	pinger := mcpinger.NewTimed("mc.herobone.de", 25565, 10*time.Second)
+	pinger := mcpinger.New("mc.herobone.de", 25565, mcpinger.WithTimeout(10*time.Second))
 
 	// Get server info
 	info, err := pinger.Ping()

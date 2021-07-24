@@ -190,21 +190,17 @@ func New(host string, port uint16, options ...McPingerOption) Pinger {
 
 // NewTimed Creates a new Pinger with specified host & port
 // to connect to a minecraft server with Timeout
+//
+// Deprecated: Use the WithTimeout option & New instead
 func NewTimed(host string, port uint16, timeout time.Duration) Pinger {
-	return &mcPinger{
-		Host:    host,
-		Port:    port,
-		Timeout: timeout,
-	}
+	return New(host, port, WithTimeout(timeout))
 }
 
 // NewContext Creates a new Pinger with the given Context
+//
+// Deprecated: Use the WithContext option & New instead
 func NewContext(ctx context.Context, host string, port uint16) Pinger {
-	return &mcPinger{
-		Host:    host,
-		Port:    port,
-		Context: ctx,
-	}
+	return New(host, port, WithContext(ctx))
 }
 
 // McPingerOption instances can be combined when creating a new Pinger
