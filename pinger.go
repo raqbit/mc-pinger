@@ -51,6 +51,9 @@ func (p *mcPinger) Ping() (*ServerInfo, error) {
 		p.Context = ctx
 		defer cancel()
 	}
+	if p.Context == nil {
+		p.Context = context.Background()
+	}
 	return p.ping()
 }
 
@@ -176,9 +179,8 @@ func (p *mcPinger) writeProxyHeader(conn net.Conn) error {
 // to connect to a minecraft server
 func New(host string, port uint16, options ...McPingerOption) Pinger {
 	p := &mcPinger{
-		Host:    host,
-		Port:    port,
-		Context: context.Background(),
+		Host: host,
+		Port: port,
 	}
 	for _, opt := range options {
 		opt(p)
