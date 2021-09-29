@@ -105,6 +105,11 @@ func (p *mcPinger) ping() (*ServerInfo, error) {
 		return nil, err
 	}
 
+	if p.Timeout > 0 {
+		// When a remote process is bound, but paused, the connect succeeds without context timeout;
+		// however, the response packet just never comes back.
+		_ = conn.SetReadDeadline(time.Now().Add(p.Timeout))
+	}
 	res, err := p.readPacket(rd)
 
 	if err != nil {
