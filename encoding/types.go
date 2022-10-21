@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
-	"math"
 )
 
 const (
@@ -133,8 +132,8 @@ func ReadString(r io.Reader) (String, error) {
 	}
 
 	// Checking if string size is valid
-	if l < 0 || l > math.MaxInt16 {
-		return "", errors.New("string length out of bounds")
+	if l < 0 {
+		return "", errors.New("string cannot have a negative length")
 	}
 
 	// Creating string buffer with the specified size
