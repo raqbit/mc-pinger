@@ -1,0 +1,17 @@
+{
+  "version": {
+    "name": "Paper 1.20.4",
+    "protocol": 765
+  },
+  "enforcesSecureChat": true,
+  "description": {
+    "text": "Foo",
+    "extra": [
+      "Bar"
+    ]
+  },
+  "players": {
+    "max": 20,
+    "online": 0
+  }
+}
